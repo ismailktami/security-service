@@ -22,28 +22,44 @@ public class JWTAuthorizationFilter extends OncePerRequestFilter {
     @Override
     protected void doFilterInternal(HttpServletRequest httpServletRequest, HttpServletResponse httpServletResponse, FilterChain filterChain) throws ServletException, IOException {
         String jwt=httpServletRequest.getHeader(SecurityParams.JWT_HEADER);
-        /*
-        if(httpServletRequest.getRequestURI().equals("/login"))
-            filterChain.doFilter(httpServletRequest,httpServletResponse);
 
-        */
-        if(jwt==null || !jwt.startsWith(SecurityParams.HEADER_PREFIX)){
-            filterChain.doFilter(httpServletRequest,httpServletResponse);
+
+
+        httpServletResponse.addHeader("Access-Control-Allow-Origin","*");
+        httpServletResponse.addHeader("Access-Control-Allow-Headers","Origin, Accept,X-Requested-With, Content-Type, Access-Control-Request-Method, Access-Control-Request-Headers,Authorization");
+        httpServletResponse.addHeader("Access-Control-Expose-Headers","Access-Control-Allow-Origin,Access-Control-Allow-Credentials, Authorization");
+        httpServletResponse.addHeader("OPTIONS","*");
+        httpServletResponse.addHeader("Access-Control-Allow-Methods","GET, POST,DELETE,PUT,PATCH");
+        if(httpServletRequest.getMethod().equals("OPTIONS")){
+            httpServletResponse.setStatus(HttpServletResponse.SC_OK);
         }
-        else{
-            JWTVerifier jwtVerifier=JWT.require(Algorithm.HMAC256(SecurityParams.PRIVATE_KEY)).build();
-            String token=jwt.substring(SecurityParams.HEADER_PREFIX.length());
-            DecodedJWT decodeJwt= jwtVerifier.verify(token);
-            List<String> roles=decodeJwt.getClaim("roles").asList(String.class);
-            System.out.println("roles++++++++++++++"+roles);
-            Collection<GrantedAuthority> authorities=new ArrayList<GrantedAuthority>();
-            String username=decodeJwt.getSubject();
-            for (String role : roles) {
-                authorities.add(new SimpleGrantedAuthority(role));
+
+        else if(httpServletRequest.getRequestURI().equals("/login")) {
+            filterChain.doFilter(httpServletRequest, httpServletResponse);
+            return ;
+        }
+
+        else {
+
+            if (jwt == null || !jwt.startsWith(SecurityParams.HEADER_PREFIX)) {
+                filterChain.doFilter(httpServletRequest, httpServletResponse);
+                return ;
             }
-            UsernamePasswordAuthenticationToken user=new UsernamePasswordAuthenticationToken(username,null,authorities);
-            SecurityContextHolder.getContext().setAuthentication(user);
-            filterChain.doFilter(httpServletRequest,httpServletResponse);
+                JWTVerifier jwtVerifier = JWT.require(Algorithm.HMAC256(SecurityParams.PRIVATE_KEY)).build();
+                String token = jwt.substring(SecurityParams.HEADER_PREFIX.length());
+                DecodedJWT decodeJwt = jwtVerifier.verify(token);
+                List<String> roles = decodeJwt.getClaim("roles").asList(String.class);
+                System.out.println("roles++++++++++++++" + roles);
+                Collection<GrantedAuthority> authorities = new ArrayList<GrantedAuthority>();
+                String username = decodeJwt.getSubject();
+                for (String role : roles) {
+                    authorities.add(new SimpleGrantedAuthority(role));
+                }
+                UsernamePasswordAuthenticationToken user = new UsernamePasswordAuthenticationToken(username, null, authorities);
+                SecurityContextHolder.getContext().setAuthentication(user);
+                httpServletResponse.setStatus(HttpServletResponse.SC_OK);
+                filterChain.doFilter(httpServletRequest, httpServletResponse);
+
         }
     }
 }
