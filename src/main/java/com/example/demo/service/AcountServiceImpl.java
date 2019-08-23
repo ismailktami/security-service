@@ -8,6 +8,9 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.ArrayList;
+import java.util.List;
+
 @Service
 @Transactional
 public class AcountServiceImpl implements AccountService {
@@ -51,6 +54,32 @@ public class AcountServiceImpl implements AccountService {
     }
 
 
+    @Override
+    public List<AppUser> getUsers() {
+        List<AppUser> users=new ArrayList<>();
 
+        for (AppUser appUser : this.appUserRepository.findAll()) {
+                appUser.getRoles().forEach(r->{
+                    if(r.getRoleName().equals("USER") && appUser.getRoles().size()==1)
+                        users.add(appUser);
 
+                });
+        }
+        return users;
+    }
+
+    @Override
+    public AppUser BloquerUser(String username) {
+            /*AppUser user=new AppUser();
+            user=appUserRepository.findByUsername(username);
+            user.setActived(false);
+            */
+             appUserRepository.findByUsername(username).setActived(false);
+             return null;
+    }
+
+    @Override
+    public AppUser DebloquerUser(String username) {
+        return null;
+    }
 }

@@ -9,6 +9,7 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.core.userdetails.User;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import javax.servlet.FilterChain;
 import javax.servlet.ServletException;
@@ -39,6 +40,9 @@ public class JWTAuthenticationFilter extends UsernamePasswordAuthenticationFilte
          } catch (IOException e) {
 
         }
+         catch(UsernameNotFoundException s){
+             response.addHeader("user","user not found");
+         }
          throw new RuntimeException("Probleme in request content");
     }
 
@@ -56,15 +60,21 @@ public class JWTAuthenticationFilter extends UsernamePasswordAuthenticationFilte
                 .withArrayClaim("roles",roles.toArray(new String[roles.size()] ))
                 .withExpiresAt(new Date(System.currentTimeMillis()+SecurityParams.EXPIRATION))
                 .sign(Algorithm.HMAC256(SecurityParams.PRIVATE_KEY));
-
         response.addHeader(SecurityParams.JWT_HEADER,SecurityParams.HEADER_PREFIX+jwt);
 
     }
 
-
     @Override
     protected void unsuccessfulAuthentication(HttpServletRequest request, HttpServletResponse response, AuthenticationException failed) throws IOException, ServletException {
 
-        response.setStatus(HttpServletResponse.SC_NOT_FOUND);
+
+        if(failed.getMessage()==null) {
+            response.setStatus(HttpServletResponse.SC_NOT_FOUND);
+                return;
+        }
+        if(failed.getMessage().equals("Bad credentials")) {
+            response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+            return;
+        }
     }
 }
